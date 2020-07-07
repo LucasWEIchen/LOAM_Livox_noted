@@ -1671,6 +1671,7 @@ class Laser_mapping
                     new std::future<void>( std::async( std::launch::async, &Laser_mapping::service_update_buff_for_matching_corner, this ) );
                 m_mapping_refresh_service_surface =
                     new std::future<void>( std::async( std::launch::async, &Laser_mapping::service_update_buff_for_matching_surface, this ) );
+                ROS_WARN( "Line Visited" );
             }
             else
             {
