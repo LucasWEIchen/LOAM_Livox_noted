@@ -82,7 +82,7 @@ class Laser_feature
     float       m_line_resolution;
     int         m_piecewise_number;
 
-    int m_maximum_input_lidar_pointcloud = 3;
+    int m_maximum_input_lidar_pointcloud =1;
     File_logger m_file_logger;
 
     bool        m_if_pub_each_line = false;
