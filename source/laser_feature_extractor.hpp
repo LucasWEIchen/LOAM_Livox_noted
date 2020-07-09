@@ -128,7 +128,7 @@ class Laser_feature
     }
 
 
-    int                       init_ros_env()
+    int init_ros_env()
     {
 
         ros::NodeHandle nh;
