@@ -1088,7 +1088,7 @@ class Laser_mapping
 
                         loop_closure_pub_optimzed_path( temp_pose_3d_map );
 
-                        for ( int pc_idx = ( int ) map_id_pc.size() - 1; pc_idx >= 0; pc_idx -= 2 )
+                        for ( int pc_idx = ( int ) map_id_pc.size() - 1; pc_idx >= 0; pc_idx -= 2 ) //L&G loop closure map correction 
                         {
                             screen_out << "*** Refine pointcloud, curren idx = " << pc_idx << " ***" << endl;
                             auto refined_pt = map_rfn.refine_pointcloud( map_id_pc, pose3d_map_ori, temp_pose_3d_map, pc_idx, 0 );

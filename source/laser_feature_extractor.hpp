@@ -238,7 +238,7 @@ class Laser_feature
         cloud_out.width = static_cast<uint32_t>( j );
         cloud_out.is_dense = true;
     }
-
+    //NOTE laser callback function
     void laserCloudHandler( const sensor_msgs::PointCloud2ConstPtr &laserCloudMsg, const std::string & topic_name )
     {
         std::unique_lock<std::mutex> lock(m_mutex_lock_handler);
@@ -279,7 +279,7 @@ class Laser_feature
 
         size_t cloudSize = laserCloudIn.points.size();
 
-        if ( m_lidar_type ) // Livox scans
+        if ( m_lidar_type ) //NOTE 1Livox 0velodyne
         {
 
             laserCloudScans = m_livox.extract_laser_features( laserCloudIn, laserCloudMsg->header.stamp.toSec() );

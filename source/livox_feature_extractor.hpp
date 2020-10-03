@@ -455,7 +455,7 @@ class Livox_laser
     }
 
     template < typename T >
-    int projection_scan_3d_2d( pcl::PointCloud< T > &laserCloudIn, std::vector< float > &scan_id_index )
+    int projection_scan_3d_2d( pcl::PointCloud< T > &laserCloudIn, std::vector< float > &scan_id_index )//TODO
     {
 
         unsigned int pts_size = laserCloudIn.size();
@@ -717,7 +717,7 @@ class Livox_laser
         }
         laserCloudScans= res_laser_cloud_scan;
     }
-
+    //NOTE Livox point feature extract
     template < typename T >
     std::vector< pcl::PointCloud< pcl::PointXYZI > > extract_laser_features( pcl::PointCloud< T > &laserCloudIn, double time_stamp = -1 )
     {
