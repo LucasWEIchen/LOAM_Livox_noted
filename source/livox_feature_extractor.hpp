@@ -323,7 +323,7 @@ class Livox_laser
     {
 
         int idx = pt_infos->idx;
-        pt_infos->pt_type |= pt_type;
+        pt_infos->pt_type |= pt_type; //|= is same as +=
 
         if ( neighbor_count > 0 )
         {
@@ -455,7 +455,7 @@ class Livox_laser
     }
 
     template < typename T >
-    int projection_scan_3d_2d( pcl::PointCloud< T > &laserCloudIn, std::vector< float > &scan_id_index )//TODO
+    int projection_scan_3d_2d( pcl::PointCloud< T > &laserCloudIn, std::vector< float > &scan_id_index )
     {
 
         unsigned int pts_size = laserCloudIn.size();
@@ -474,9 +474,9 @@ class Livox_laser
         for ( unsigned int idx = 0; idx < pts_size; idx++ )
         {
             m_raw_pts_vec[ idx ] = laserCloudIn.points[ idx ];
-            Pt_infos *pt_info = &m_pts_info_vec[ idx ];
-            m_map_pt_idx.insert( std::make_pair( laserCloudIn.points[ idx ], pt_info ) );
-            pt_info->raw_intensity = laserCloudIn.points[ idx ].intensity;
+            Pt_infos *pt_info = &m_pts_info_vec[ idx ]; //attribute of a livox point
+            m_map_pt_idx.insert( std::make_pair( laserCloudIn.points[ idx ], pt_info ) );//std::make_pair->std::map< PointType, Pt_infos *, Pt_compare > 
+            pt_info->raw_intensity = laserCloudIn.points[ idx ].intensity;//livox use intensity as the 4th dimension info
             pt_info->idx = idx;
             pt_info->time_stamp = m_current_time + ( ( float ) idx ) * m_time_internal_pts;
             m_last_maximum_time_stamp = pt_info->time_stamp;
@@ -486,7 +486,7 @@ class Livox_laser
                  !std::isfinite( laserCloudIn.points[ idx ].y ) ||
                  !std::isfinite( laserCloudIn.points[ idx ].z ) )
             {
-                add_mask_of_point( pt_info, e_pt_nan );
+                add_mask_of_point( pt_info, e_pt_nan ); //NOTE if any of xyz of a point is inf, then the point is inf
                 continue;
             }
 
@@ -494,7 +494,7 @@ class Livox_laser
             {
                 if ( idx == 0 )
                 {
-                    // TODO: handle this case.
+                    // NOTE: handle the first point of each livox callback.
                     screen_out << "First point should be normal!!!" << std::endl;
 
                     pt_info->pt_2d_img << 0.01, 0.01;
@@ -510,10 +510,10 @@ class Livox_laser
                     continue;
                 }
             }
-
+            //NOTE only for first point
             m_map_pt_idx.insert( std::make_pair( laserCloudIn.points[ idx ], pt_info ) );
 
-            pt_info->depth_sq2 = depth2_xyz( laserCloudIn.points[ idx ].x, laserCloudIn.points[ idx ].y, laserCloudIn.points[ idx ].z );
+            pt_info->depth_sq2 = depth2_xyz( laserCloudIn.points[ idx ].x, laserCloudIn.points[ idx ].y, laserCloudIn.points[ idx ].z );//x * x + y * y + z * z
 
             pt_info->pt_2d_img << laserCloudIn.points[ idx ].y / laserCloudIn.points[ idx ].x, laserCloudIn.points[ idx ].z / laserCloudIn.points[ idx ].x;
             pt_info->polar_dis_sq2 = dis2_xy( pt_info->pt_2d_img( 0 ), pt_info->pt_2d_img( 1 ) );
