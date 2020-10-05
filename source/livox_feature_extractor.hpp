@@ -331,10 +331,10 @@ class Livox_laser
             {
                 idx = pt_infos->idx + i;
 
-                if ( i != 0 && ( idx >= 0 ) && ( idx < ( int ) m_pts_info_vec.size() ) )
+                if ( i != 0 && ( idx >= 0 ) && ( idx < ( int ) m_pts_info_vec.size() ) ) //not the point itself && not the first point in a sweep && not beyond the max_point_num
                 {
                     //screen_out << "Add mask, id  = " << idx << "  type = " << pt_type << endl;
-                    m_pts_info_vec[ idx ].pt_type |= pt_type;
+                    m_pts_info_vec[ idx ].pt_type |= pt_type; //bitwise |=, if pt_type is !0(which is 'e_pt_normal'--- not yet processed), then assign a point_type
                 }
             }
         }
@@ -497,7 +497,7 @@ class Livox_laser
                     // NOTE: handle the first point of each livox callback.
                     screen_out << "First point should be normal!!!" << std::endl;
 
-                    pt_info->pt_2d_img << 0.01, 0.01; //init 2d prijection of the first point
+                    pt_info->pt_2d_img << 0.01, 0.01; //init 2d prijection of the first point-- first point is the center of the flower shape(0.1,0.1)
                     pt_info->polar_dis_sq2 = 0.0001; //x * x + y * y + z * z init to 0.0001
                     add_mask_of_point( pt_info, e_pt_000 );
                     //return 0;
@@ -516,19 +516,19 @@ class Livox_laser
             pt_info->depth_sq2 = depth2_xyz( laserCloudIn.points[ idx ].x, laserCloudIn.points[ idx ].y, laserCloudIn.points[ idx ].z );//x * x + y * y + z * z
 
             pt_info->pt_2d_img << laserCloudIn.points[ idx ].y / laserCloudIn.points[ idx ].x, laserCloudIn.points[ idx ].z / laserCloudIn.points[ idx ].x;//TODO 3D->2D project to X==1 plane
-            pt_info->polar_dis_sq2 = dis2_xy( pt_info->pt_2d_img( 0 ), pt_info->pt_2d_img( 1 ) );//dis of XY after 2D projection
+            pt_info->polar_dis_sq2 = dis2_xy( pt_info->pt_2d_img( 0 ), pt_info->pt_2d_img( 1 ) );//project points to Y-Z 2D, a flower view of the scan, for the purpose of process scan partten
 
-            eval_point( pt_info );
+            eval_point( pt_info ); //NOTE evaluate each point 1:{if dis < livox min allowed dis -> point = inf} 2:{assign point intensity using eq.3 on paper} 3:{if intensity<min_livox_intensity, point=lowintensityPoint}
 
-            if ( pt_info->polar_dis_sq2 > m_max_edge_polar_pos )
+            if ( pt_info->polar_dis_sq2 > m_max_edge_polar_pos )//NOTE if is point on the edge of the FOV, edge define as std::pow( tan( max_fov / 57.3 ) * 1, 2 )
             {
-                add_mask_of_point( pt_info, e_pt_circle_edge, 2 );
+                add_mask_of_point( pt_info, e_pt_circle_edge, 2 );//TODO -2to+2. 5 points as edge point?? 一人越线，全家受累??
             }
 
             // Split scans
-            if ( idx >= 1 )
+            if ( idx >= 1 )//if not the first point of a scan
             {
-                float dis_incre = pt_info->polar_dis_sq2 - m_pts_info_vec[ idx - 1 ].polar_dis_sq2;
+                float dis_incre = pt_info->polar_dis_sq2 - m_pts_info_vec[ idx - 1 ].polar_dis_sq2;//trend of the surface,if its going towards the center of the flower shape or the opposite way
 
                 if ( dis_incre > 0 ) // far away from zero
                 {
@@ -540,29 +540,30 @@ class Livox_laser
                     pt_info->polar_direction = -1;
                 }
 
-                if ( pt_info->polar_direction == -1 && m_pts_info_vec[ idx - 1 ].polar_direction == 1 )
+                if ( pt_info->polar_direction == -1 && m_pts_info_vec[ idx - 1 ].polar_direction == 1 )// detecting the turnning point of a flower shape scan
                 {
-                    if ( edge_idx.size() == 0 || ( idx - split_idx[ split_idx.size() - 1 ] ) > 50 )
+                    if ( edge_idx.size() == 0 || ( idx - split_idx[ split_idx.size() - 1 ] ) > 50 )//TODO if no edge size lodged or 50 points after the last split, why 50?
                     {
-                        split_idx.push_back( idx );
-                        edge_idx.push_back( idx );
+                        split_idx.push_back( idx );//# of petal of scan
+                        edge_idx.push_back( idx );//edge side points
                         continue;
                     }
                 }
 
-                if ( pt_info->polar_direction == 1 && m_pts_info_vec[ idx - 1 ].polar_direction == -1 )
+                if ( pt_info->polar_direction == 1 && m_pts_info_vec[ idx - 1 ].polar_direction == -1 )// other-way-around turnning point which close to the center.
                 {
                     if ( zero_idx.size() == 0 || ( idx - split_idx[ split_idx.size() - 1 ] ) > 50 )
                     {
-                        split_idx.push_back( idx );
+                        split_idx.push_back( idx );//# of petal of scan
 
-                        zero_idx.push_back( idx );
+                        zero_idx.push_back( idx );//center side points
                         continue;
                     }
                 }
             }
         }
-        split_idx.push_back( pts_size - 1 );
+        //NOTE Done split all point into petals
+        split_idx.push_back( pts_size - 1 );// last slot of split_idx record # of points in last callback
 
         int   val_index = 0;
         int   pt_angle_index = 0;
@@ -574,27 +575,27 @@ class Livox_laser
         
         for ( int idx = 0; idx < ( int ) pts_size; idx++ )
         {
-            if ( val_index < split_idx.size() - 2 )
+            if ( val_index < split_idx.size() - 2 )//number of item in split_idx is .size-1, and the last slot is the total number of points recorded
             {
-                if ( idx == 0 || idx > split_idx[ val_index + 1 ] )
+                if ( idx == 0 || idx > split_idx[ val_index + 1 ] )//if idx is the staring point or the beginning of a petal
                 {
-                    if ( idx > split_idx[ val_index + 1 ] )
+                    if ( idx > split_idx[ val_index + 1 ] )//if idx is the beginning of a petal, then petal count++
                     {
                         val_index++;
                     }
 
-                    internal_size = split_idx[ val_index + 1 ] - split_idx[ val_index ];
+                    internal_size = split_idx[ val_index + 1 ] - split_idx[ val_index ]; //number of points in this petal
 
-                    if ( m_pts_info_vec[ split_idx[ val_index + 1 ] ].polar_dis_sq2 > 10000 )
+                    if ( m_pts_info_vec[ split_idx[ val_index + 1 ] ].polar_dis_sq2 > 10000 ) //if the starting point of next petal's x^2+y^2+z^2 > 10000
                     {
-                        pt_angle_index = split_idx[ val_index + 1 ] - ( int ) ( internal_size * 0.20 );
+                        pt_angle_index = split_idx[ val_index + 1 ] - ( int ) ( internal_size * 0.20 );//last 20% of the points in this petal
                         scan_angle = atan2( m_pts_info_vec[ pt_angle_index ].pt_2d_img( 1 ), m_pts_info_vec[ pt_angle_index ].pt_2d_img( 0 ) ) * 57.3;
                         scan_angle = scan_angle + 180.0;
                     }
                     else
                     {
-                        pt_angle_index = split_idx[ val_index + 1 ] - ( int ) ( internal_size * 0.80 );
-                        scan_angle = atan2( m_pts_info_vec[ pt_angle_index ].pt_2d_img( 1 ), m_pts_info_vec[ pt_angle_index ].pt_2d_img( 0 ) ) * 57.3;
+                        pt_angle_index = split_idx[ val_index + 1 ] - ( int ) ( internal_size * 0.80 );//last 80% of the points in this petal
+                        scan_angle = atan2( m_pts_info_vec[ pt_angle_index ].pt_2d_img( 1 ), m_pts_info_vec[ pt_angle_index ].pt_2d_img( 0 ) ) * 57.3;//atan2(z/y)*57.3
                         scan_angle = scan_angle + 180.0;
                     }
                 }
@@ -752,8 +753,8 @@ class Livox_laser
             pcl::io::savePCDFileASCII( ss.str(), laserCloudIn );
         }
 
-        int clutter_size = projection_scan_3d_2d( laserCloudIn, scan_id_index );
-        compute_features();
+        int clutter_size = projection_scan_3d_2d( laserCloudIn, scan_id_index );//return number of points and update petals info in the class
+        compute_features();//TODO read
         if ( clutter_size == 0 )
         {
             return laserCloudScans;
