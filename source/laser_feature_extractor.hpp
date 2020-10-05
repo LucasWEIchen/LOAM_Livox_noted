@@ -282,7 +282,7 @@ class Laser_feature
         if ( m_lidar_type ) //NOTE 1Livox 0velodyne
         {
 
-            laserCloudScans = m_livox.extract_laser_features( laserCloudIn, laserCloudMsg->header.stamp.toSec() ); //livox scan into petals with edge and plane marked and non-good point removed
+            laserCloudScans = m_livox.extract_laser_features( laserCloudIn, laserCloudMsg->header.stamp.toSec() ); //livox scan into half-petals with edge and plane marked and non-good point removed
 
             if ( laserCloudScans.size() <= 5 ) // less than 5 scan
             {

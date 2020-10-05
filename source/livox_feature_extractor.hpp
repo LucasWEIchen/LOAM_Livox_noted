@@ -587,8 +587,8 @@ public:
                     if (m_pts_info_vec[split_idx[val_index + 1]].polar_dis_sq2 > 10000) //if the starting point of next petal's x^2+y^2+z^2 > 10000
                     {
                         pt_angle_index = split_idx[val_index + 1] - (int)(internal_size * 0.20); //TODO last 20% of the points in this petal
-                        scan_angle = atan2(m_pts_info_vec[pt_angle_index].pt_2d_img(1), m_pts_info_vec[pt_angle_index].pt_2d_img(0)) * 57.3;
-                        scan_angle = scan_angle + 180.0;
+                        scan_angle = atan2(m_pts_info_vec[pt_angle_index].pt_2d_img(1), m_pts_info_vec[pt_angle_index].pt_2d_img(0)) * 57.3; //pt_2d_img(1):z/x,(0):y/x
+                        scan_angle = scan_angle + 180.0;//TODO ??
                     }
                     else
                     {
@@ -598,8 +598,8 @@ public:
                     }
                 }
             }
-            m_pts_info_vec[idx].polar_angle = scan_angle;//keep in mind above if conditions skip points which will have same scan_angle
-            scan_id_index[idx] = scan_angle;
+            m_pts_info_vec[idx].polar_angle = scan_angle;//keep in mind the above, the if conditions skip points, therefore most scan_angle will be 0
+            scan_id_index[idx] = scan_angle;//only scan_angle of the starting point of a petal recorded 
         }
 
         return split_idx.size() - 1;
@@ -668,10 +668,10 @@ public:
 
             point = laserCloudIn.points[i];
 
-            if (i > 0 && ((scan_id_index[i]) != (scan_id_index[i - 1])))// if not first point and scan angle not same with last point, related to above function, edge petal points could have same scan_angle
+            if (i > 0 && ((scan_id_index[i]) != (scan_id_index[i - 1])))// if not first point and scan angle not same with last point, related to above function, only starting point of a petal has scan_angle, teh rest is 0
             {
-                scan_idx = scan_idx + 1;//TODO next petal??
-                pts_mask[scan_idx].reserve(5000);//TODO resize vector to 5000,why
+                scan_idx = scan_idx + 1;//NOTE next point cloud, nex half of a petal
+                pts_mask[scan_idx].reserve(5000);//TODO resize vector to 5000, How many points in each scan is NOT listed on Livox or DJI webpage, need to investigate
             }
 
             laserCloudScans[scan_idx].push_back(point);
