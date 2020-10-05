@@ -490,15 +490,15 @@ class Livox_laser
                 continue;
             }
 
-            if ( laserCloudIn.points[ idx ].x == 0 )
+            if ( laserCloudIn.points[ idx ].x == 0 )//TODO if x is 0??
             {
                 if ( idx == 0 )
                 {
                     // NOTE: handle the first point of each livox callback.
                     screen_out << "First point should be normal!!!" << std::endl;
 
-                    pt_info->pt_2d_img << 0.01, 0.01;
-                    pt_info->polar_dis_sq2 = 0.0001;
+                    pt_info->pt_2d_img << 0.01, 0.01; //init 2d prijection of the first point
+                    pt_info->polar_dis_sq2 = 0.0001; //x * x + y * y + z * z init to 0.0001
                     add_mask_of_point( pt_info, e_pt_000 );
                     //return 0;
                 }
@@ -507,16 +507,16 @@ class Livox_laser
                     pt_info->pt_2d_img = m_pts_info_vec[ idx - 1 ].pt_2d_img;
                     pt_info->polar_dis_sq2 = m_pts_info_vec[ idx - 1 ].polar_dis_sq2;
                     add_mask_of_point( pt_info, e_pt_000 );
-                    continue;
+                    continue;//NOTE aviod all after line when x=0 and idx is not 0
                 }
             }
-            //NOTE only for first point
+            //ANCHOR inseret point from m_pts_info_vec to m_map_pt_idx
             m_map_pt_idx.insert( std::make_pair( laserCloudIn.points[ idx ], pt_info ) );
 
             pt_info->depth_sq2 = depth2_xyz( laserCloudIn.points[ idx ].x, laserCloudIn.points[ idx ].y, laserCloudIn.points[ idx ].z );//x * x + y * y + z * z
 
-            pt_info->pt_2d_img << laserCloudIn.points[ idx ].y / laserCloudIn.points[ idx ].x, laserCloudIn.points[ idx ].z / laserCloudIn.points[ idx ].x;
-            pt_info->polar_dis_sq2 = dis2_xy( pt_info->pt_2d_img( 0 ), pt_info->pt_2d_img( 1 ) );
+            pt_info->pt_2d_img << laserCloudIn.points[ idx ].y / laserCloudIn.points[ idx ].x, laserCloudIn.points[ idx ].z / laserCloudIn.points[ idx ].x;//TODO 3D->2D project to X==1 plane
+            pt_info->polar_dis_sq2 = dis2_xy( pt_info->pt_2d_img( 0 ), pt_info->pt_2d_img( 1 ) );//dis of XY after 2D projection
 
             eval_point( pt_info );
 
