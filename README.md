@@ -4,7 +4,7 @@
 
 ### Orginal [LOAM](https://github.com/cuitaixiang/LOAM_NOTED)
 
-### The author crashed me with his magnificent C++ skill, Ohh what a func!
+### The author crashed me with his magnificent C++ skill and extraordinary spatial visualization skill, Ohh what a func!
 
 #### 作者用大师般的C++创作技巧将我按在屏幕上反复摩擦：
 
