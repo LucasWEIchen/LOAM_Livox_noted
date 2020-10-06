@@ -170,10 +170,10 @@ class Laser_feature
         m_map_pointcloud_surface_vec_vec.resize(m_maximum_input_lidar_pointcloud);
         m_map_pointcloud_corner_vec_vec.resize(m_maximum_input_lidar_pointcloud);
 
-        for(int i = 0 ; i< m_maximum_input_lidar_pointcloud; i++)
+        for(int i = 0 ; i< m_maximum_input_lidar_pointcloud; i++)//NOTE m_maximum_input_lidar_pointcloud hard coded to 1, i is 0 in this case
         {
             m_input_lidar_topic_name_vec.push_back(string("laser_points_").append(std::to_string(i)));
-            m_sub_input_laser_cloud_vec.push_back( nh.subscribe<sensor_msgs::PointCloud2>( m_input_lidar_topic_name_vec.back(), 10000, boost::bind( &Laser_feature::laserCloudHandler, this, _1,  m_input_lidar_topic_name_vec.back()) ) );
+            m_sub_input_laser_cloud_vec.push_back( nh.subscribe<sensor_msgs::PointCloud2>( m_input_lidar_topic_name_vec.back(), 10000, boost::bind( &Laser_feature::laserCloudHandler, this, _1,  m_input_lidar_topic_name_vec.back()) ) );//bind
             m_map_pointcloud_full_vec_vec[i].resize(m_piecewise_number);
             m_map_pointcloud_surface_vec_vec[i].resize(m_piecewise_number);
             m_map_pointcloud_corner_vec_vec[i].resize(m_piecewise_number);
@@ -284,7 +284,7 @@ class Laser_feature
 
             laserCloudScans = m_livox.extract_laser_features( laserCloudIn, laserCloudMsg->header.stamp.toSec() ); //livox scan into half-petals with edge and plane marked and non-good point removed
 
-            if ( laserCloudScans.size() <= 5 ) // less than 5 scan
+            if ( laserCloudScans.size() <= 5 ) // less than 5 scan,(5 1/2petals)
             {
                 return;
             }
@@ -302,15 +302,15 @@ class Laser_feature
                 *    Feature extraction for livox lidar     *
                 ********************************************/
 
-                int piece_wise = m_piecewise_number;
+                int piece_wise = m_piecewise_number;//devided a scan into 3 pieces to reduce motion blur
                 if(m_if_motion_deblur)
                 {
-                    piece_wise = 1;
+                    piece_wise = 1;// if no motion blur, then consider scan as one piece
                 }
                 vector<float> piece_wise_start( piece_wise );
                 vector<float> piece_wise_end( piece_wise );
 
-                for ( int i = 0; i < piece_wise; i++ )
+                for ( int i = 0; i < piece_wise; i++ )// split a scan into n pieces
                 {
                     int start_scans, end_scans;
 
@@ -339,7 +339,7 @@ class Laser_feature
                 for ( int i = 0; i < piece_wise; i++ )
                 {
 
-                    ros::Time                       current_time = ros::Time::now();
+                    ros::Time current_time = ros::Time::now();
                     pcl::PointCloud<PointType>::Ptr livox_corners( new pcl::PointCloud<PointType>() ),
                         livox_surface( new pcl::PointCloud<PointType>() ),
                         livox_full( new pcl::PointCloud<PointType>() );
@@ -350,7 +350,7 @@ class Laser_feature
                             return;
                         }
 
-                        for ( int ii = 0; ii < m_maximum_input_lidar_pointcloud; ii++ )
+                        for ( int ii = 0; ii < m_maximum_input_lidar_pointcloud; ii++ )//m_maximum_input_lidar_pointcloud is 1, number of LiDARs using
                         {
                             *livox_full += m_map_pointcloud_full_vec_vec[ ii ][ i ];
                             *livox_surface += m_map_pointcloud_surface_vec_vec[ ii ][ i ];
@@ -506,7 +506,7 @@ class Laser_feature
             //printf_line;
             //printf( "points size %d \n", cloudSize );
         }
-
+        //TODO finish conor/surface/all points
         pcl::PointCloud<PointType>::Ptr laserCloud( new pcl::PointCloud<PointType>() );
         laserCloud->clear();
         cloudSize = 0;

@@ -235,11 +235,11 @@ public:
 
             if ((m_pts_info_vec[i].pt_type & pt_critical_rm_mask) == 0)
             {
-                if (m_pts_info_vec[i].pt_label & e_label_corner)
+                if (m_pts_info_vec[i].pt_label & e_label_corner)//NOTE if labeled as corner
                 {
                     if (m_pts_info_vec[i].pt_type != e_pt_normal)
                         continue;
-                    if (m_pts_info_vec[i].depth_sq2 < std::pow(30, 2))
+                    if (m_pts_info_vec[i].depth_sq2 < std::pow(30, 2))//if distance is less than 30^2
                     {
                         pc_corners.points[corner_num] = m_raw_pts_vec[i];
                         //set_intensity( pc_corners.points[ corner_num ], e_I_motion_blur );
@@ -247,9 +247,9 @@ public:
                         corner_num++;
                     }
                 }
-                if (m_pts_info_vec[i].pt_label & e_label_surface)
+                if (m_pts_info_vec[i].pt_label & e_label_surface)//NOTE if labeled as surface
                 {
-                    if (m_pts_info_vec[i].depth_sq2 < std::pow(1000, 2))
+                    if (m_pts_info_vec[i].depth_sq2 < std::pow(1000, 2))//if distance is less than 1000^2
                     {
                         pc_surface.points[surface_num] = m_raw_pts_vec[i];
                         pc_surface.points[surface_num].intensity = float(m_pts_info_vec[i].time_stamp);
@@ -258,7 +258,7 @@ public:
                     }
                 }
             }
-            pc_full_res.points[full_num] = m_raw_pts_vec[i];
+            pc_full_res.points[full_num] = m_raw_pts_vec[i];//all points
             pc_full_res.points[full_num].intensity = m_pts_info_vec[i].time_stamp;
             full_num++;
         }
