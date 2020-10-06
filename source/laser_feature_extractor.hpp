@@ -314,12 +314,12 @@ class Laser_feature
                 {
                     int start_scans, end_scans;
 
-                    start_scans = int( ( m_laser_scan_number * ( i ) ) / piece_wise );
-                    end_scans = int( ( m_laser_scan_number * ( i + 1 ) ) / piece_wise ) - 1;
+                    start_scans = int( ( m_laser_scan_number * ( i ) ) / piece_wise );       //start from 0,1/3,2/3 of the total half-petal
+                    end_scans = int( ( m_laser_scan_number * ( i + 1 ) ) / piece_wise ) - 1;//end by 1/3,2/3,3/3 of the total half-petal
 
-                    int end_idx = laserCloudScans[ end_scans ].size() - 1;
-                    piece_wise_start[ i ] = ( ( float ) m_livox.find_pt_info( laserCloudScans[ start_scans ].points[ 0 ] )->idx ) / m_livox.m_pts_info_vec.size();
-                    piece_wise_end[ i ] = ( ( float ) m_livox.find_pt_info( laserCloudScans[ end_scans ].points[ end_idx ] )->idx ) / m_livox.m_pts_info_vec.size();
+                    int end_idx = laserCloudScans[ end_scans ].size() - 1;// last point in the ending half-petal of current piece
+                    piece_wise_start[ i ] = ( ( float ) m_livox.find_pt_info( laserCloudScans[ start_scans ].points[ 0 ] )->idx ) / m_livox.m_pts_info_vec.size();//using point info to find the point id in orginal scan, std::map with custom compare search
+                    piece_wise_end[ i ] = ( ( float ) m_livox.find_pt_info( laserCloudScans[ end_scans ].points[ end_idx ] )->idx ) / m_livox.m_pts_info_vec.size();//我头疼
                 }
 
                 for ( int i = 0; i < piece_wise; i++ )
@@ -328,15 +328,15 @@ class Laser_feature
                         livox_surface( new pcl::PointCloud<PointType>() ),
                         livox_full( new pcl::PointCloud<PointType>() );
                     m_livox.get_features( *livox_corners, *livox_surface, *livox_full, piece_wise_start[ i ], piece_wise_end[ i ] );
-                    m_map_pointcloud_corner_vec_vec[current_lidar_index][i] = *livox_corners;
-                    m_map_pointcloud_surface_vec_vec[current_lidar_index][i] = *livox_surface;
-                    m_map_pointcloud_full_vec_vec[current_lidar_index][i] = *livox_full;
+                    m_map_pointcloud_corner_vec_vec[current_lidar_index][i] = *livox_corners;//NOTE list of LiDARs->list of Pieces->corners in the list of half-Petals
+                    m_map_pointcloud_surface_vec_vec[current_lidar_index][i] = *livox_surface;//list of LiDARs->list of Pieces->surfaces in the list of half-Petals
+                    m_map_pointcloud_full_vec_vec[current_lidar_index][i] = *livox_full;//list of LiDARs->list of Pieces->all points in the list of half-Petals
                     
                 }
 
                 //if(1)
 
-                for ( int i = 0; i < piece_wise; i++ )
+                for ( int i = 0; i < piece_wise; i++ )//for every piece of the current scan
                 {
 
                     ros::Time current_time = ros::Time::now();
@@ -352,18 +352,18 @@ class Laser_feature
 
                         for ( int ii = 0; ii < m_maximum_input_lidar_pointcloud; ii++ )//m_maximum_input_lidar_pointcloud is 1, number of LiDARs using
                         {
-                            *livox_full += m_map_pointcloud_full_vec_vec[ ii ][ i ];
+                            *livox_full += m_map_pointcloud_full_vec_vec[ ii ][ i ];//these lines suppose to gather all features from all LiDARs
                             *livox_surface += m_map_pointcloud_surface_vec_vec[ ii ][ i ];
                             *livox_corners += m_map_pointcloud_corner_vec_vec[ ii ][ i ];
                         }
                     }
-                    else
+                    else//no you saw the 1 up there, here is no else
                     {
                         *livox_full = m_map_pointcloud_full_vec_vec[ current_lidar_index ][ i ];
                         *livox_surface = m_map_pointcloud_surface_vec_vec[ current_lidar_index ][ i ];
                         *livox_corners = m_map_pointcloud_corner_vec_vec[ current_lidar_index ][ i ];
                     }
-
+                    //NOTE packing and sending featured points
                     pcl::toROSMsg( *livox_full, temp_out_msg );
                     temp_out_msg.header.stamp = current_time;
                     temp_out_msg.header.frame_id = "camera_init";
@@ -390,7 +390,7 @@ class Laser_feature
             }
             return;
         }
-        else
+        else// NOTE if using Velodyne, this part is modified from A-LOAM package, with some attributes renamed
         {
             /********************************************
              *    Feature extraction for velodyne lidar *

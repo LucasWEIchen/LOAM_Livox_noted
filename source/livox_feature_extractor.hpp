@@ -153,7 +153,7 @@ public:
     float thr_corner_curvature = 0.05;
     float thr_surface_curvature = 0.01;
     float minimum_view_angle = 10;
-    std::vector<Pt_infos> m_pts_info_vec;
+    std::vector<Pt_infos> m_pts_info_vec;//list of all point info
     std::vector<PointType> m_raw_pts_vec;
 #if USE_HASH
     std::unordered_map<PointType, Pt_infos *, Pt_hasher, Pt_compare> m_map_pt_idx; // using hash_map
@@ -206,7 +206,7 @@ public:
     template <typename T>
     Pt_infos *find_pt_info(const T &pt)
     {
-        m_map_pt_idx_it = m_map_pt_idx.find(pt);
+        m_map_pt_idx_it = m_map_pt_idx.find(pt);//std::map with custom compare, x->y->z order
         if (m_map_pt_idx_it == m_map_pt_idx.end())
         {
             printf("Input pt is [%lf, %lf, %lf]\r\n", pt.x, pt.y, pt.z);
