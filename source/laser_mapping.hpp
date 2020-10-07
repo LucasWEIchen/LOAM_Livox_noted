@@ -633,7 +633,7 @@ class Laser_mapping
     Data_pair *get_data_pair( const double &time_stamp )
     {
         std::map<double, Data_pair *>::iterator it = m_map_data_pair.find( time_stamp );
-        if ( it == m_map_data_pair.end() )
+        if ( it == m_map_data_pair.end() )// if did not find current time stamp then create a new pair
         {
             Data_pair *date_pair_ptr = new Data_pair();
             m_map_data_pair.insert( std::make_pair( time_stamp, date_pair_ptr ) );
@@ -749,8 +749,8 @@ class Laser_mapping
     void laserCloudCornerLastHandler( const sensor_msgs::PointCloud2ConstPtr &laserCloudCornerLast2 )
     {
         std::unique_lock<std::mutex> lock( m_mutex_buf );
-        Data_pair *                  data_pair = get_data_pair( laserCloudCornerLast2->header.stamp.toSec() );
-        data_pair->add_pc_corner( laserCloudCornerLast2 );
+        Data_pair *                  data_pair = get_data_pair( laserCloudCornerLast2->header.stamp.toSec() );//NOTE pair the corner data with other feature in same timestamp
+        data_pair->add_pc_corner( laserCloudCornerLast2 );//TODO if two corner cloud came within 1 sec,and both not processed yet, the first is overwrited??
         if ( data_pair->is_completed() )
         {
             m_queue_avail_data.push( data_pair );
@@ -1296,7 +1296,7 @@ class Laser_mapping
         //printf_line;
     }
 
-    int if_matchbuff_and_pc_sync( float point_cloud_current_timestamp )
+    int if_matchbuff_and_pc_sync( float point_cloud_current_timestamp )//TODO time sync
     {
         if ( m_lastest_pc_matching_refresh_time < 0 )
             return 1;
@@ -1345,11 +1345,11 @@ class Laser_mapping
         m_minimum_pt_time_stamp = m_last_time_stamp;
         m_maximum_pt_time_stamp = max_t;
         m_last_time_stamp = max_t;
-        Point_cloud_registration pc_reg;
+        Point_cloud_registration pc_reg;//TODO 
         init_pointcloud_registration( pc_reg );
         m_current_frame_index++;
         double time_odom = ros::Time::now().toSec();
-        m_mutex_querypointcloud.unlock();
+        m_mutex_querypointcloud.unlock();//unlock so ros subcriber can update point clouds
 
         screen_printf( "****** Before timestamp info = [%.6f, %.6f, %.6f, %.6f ] ****** \r\n", m_minimum_pt_time_stamp, m_maximum_pt_time_stamp, min_t, m_lastest_pc_matching_refresh_time );
 
@@ -1707,7 +1707,7 @@ class Laser_mapping
                 m_queue_avail_data.pop();
             }
 
-            Data_pair *current_data_pair = m_queue_avail_data.front();
+            Data_pair *current_data_pair = m_queue_avail_data.front();//read the front in the data pool
             m_queue_avail_data.pop();
             m_mutex_buf.unlock();
 
@@ -1722,7 +1722,7 @@ class Laser_mapping
 
             ( *m_logger_common.get_ostream() ) << "Messgage time stamp = " << m_time_pc_corner_past - first_time_stamp << endl;
 
-            m_mutex_querypointcloud.lock();
+            m_mutex_querypointcloud.lock();//lock when writing to the point cloud, related with multi-threading process reading the points in Laser_mapping::process_new_scan
             m_laser_cloud_corner_last->clear();
             pcl::fromROSMsg( *( current_data_pair->m_pc_corner ), *m_laser_cloud_corner_last );
 
@@ -1737,7 +1737,7 @@ class Laser_mapping
 
             Common_tools::maintain_maximum_thread_pool<std::future<int> *>( m_thread_pool, m_maximum_parallel_thread );
 
-            std::future<int> *thd = new std::future<int>( std::async( std::launch::async, &Laser_mapping::process_new_scan, this ) );
+            std::future<int> *thd = new std::future<int>( std::async( std::launch::async, &Laser_mapping::process_new_scan, this ) );//NOTE start threading
 
             *( m_logger_timer.get_ostream() ) << m_timer.toc_string( "Prepare to enter thread" ) << std::endl;
             m_thread_pool.push_back( thd );

@@ -17,4 +17,4 @@ Overall, the structure of LOAM_Livox is the same as the original LOAM. Coding wi
 
 The entry point is laser_feature_extractor. Then it called livox_feature_extractor in the laser callback. livox_feature_extractor contains functions which processing the unique scan pattern of Livox and divided it into lines which can be pushed into LOAM algorithms. The code should also support Velodyne LiDARs by changing some parameters. There are some modifications in laser_feature_extractor to interfacing Livox scan pattern. Large part of the code is for testing and illustrating and not related with the core process.
 
-Featurer_extractor only dealing with point cloud filtering and selecting. Then all surface/plane points is piped to laser_mapping. The rest is quite the same as LOAM.
+Featurer_extractor only dealing with point cloud filtering and selecting. Then all surface/plane points is piped to laser_mapping. The rest is quite the same as LOAM but in multi-thread.
