@@ -532,8 +532,8 @@ class Laser_feature
             m_pc_sort_idx[ i ] = i;
             m_pc_neighbor_picked[ i ] = 0;
             m_pc_cloud_label[ i ] = 0;
-            if ( 1 )
-            {
+            if ( 1 )// this section removing most points if it looks not interested
+            {// the more 'if(1)' you see here, the more author suffered during his testing and tuning
                 if ( 1 )
                 {
                     if ( diff > 0.1 )//if curvature >0.1
@@ -594,7 +594,7 @@ class Laser_feature
                         m_pc_neighbor_picked[ i ] = 1;
                     }
                 }
-            }
+            }// all these removed points from following processes
         }
 //printf_line;
 
@@ -612,7 +612,7 @@ class Laser_feature
                 if ( pt_info->pt_type != Livox_laser::e_pt_normal )//if the point is not a normal state
                 {
                     //screen_out << "Reject, id = "<<idx << " ---, type = " << livox.m_mask_pointtype[idx] <<std::endl;
-                    m_pc_neighbor_picked[ idx ] = 1;
+                    m_pc_neighbor_picked[ idx ] = 1;// then the point marked as picked---excluded from below processes
                 }
             }
         }
@@ -624,7 +624,7 @@ class Laser_feature
         pcl::PointCloud<PointType> cornerPointsSharp;
         pcl::PointCloud<PointType> cornerPointsLessSharp;
         pcl::PointCloud<PointType> surfPointsFlat;
-        pcl::PointCloud<PointType> surfPointsLessFlat;
+        pcl::PointCloud<PointType> surfPointsLessFlat;// this one is not used in the code, all the points not selected or removed by the process are consider as lesslflat
         float                      sharp_point_threshold = 0.05;
 
         //extract corners points and surface points
@@ -633,11 +633,11 @@ class Laser_feature
             pcl::PointCloud<PointType>::Ptr surfPointsLessFlatScan( new pcl::PointCloud<PointType> );
             // To ensure the distribution of features point, spilt each scan into 6 parts equally according to their curvature.
             for ( int j = 0; j < 6; j++ )
-            {
+            {//scanStartInd: incermental index of starting point of a half-a-petal inside a scan
                 //Starting of each sub-scan.
-                int sp = ( scanStartInd[ i ] * ( 6 - j ) + scanEndInd[ i ] * j ) / 6;
+                int sp = ( scanStartInd[ i ] * ( 6 - j ) + scanEndInd[ i ] * j ) / 6;//TODO is this necessary??
                 //Ending of each sub-scan.
-                int ep = ( scanStartInd[ i ] * ( 5 - j ) + scanEndInd[ i ] * ( j + 1 ) ) / 6 - 1;
+                int ep = ( scanStartInd[ i ] * ( 5 - j ) + scanEndInd[ i ] * ( j + 1 ) ) / 6 - 1;//TODO ??
 
                 //sort curvature
                 for ( int k = sp + 1; k <= ep; k++ )
@@ -659,7 +659,7 @@ class Laser_feature
                 {
                     int ind = m_pc_sort_idx[ k ]; //The index of biggest curvature.
 
-                    if ( m_pc_neighbor_picked[ ind ] == 0 &&
+                    if ( m_pc_neighbor_picked[ ind ] == 0 &&//if the point is not been picked yet
                          m_pc_curvature[ ind ] > sharp_point_threshold * 10 )
                     {
 
@@ -683,7 +683,7 @@ class Laser_feature
                         m_pc_neighbor_picked[ ind ] = 1;
 
                         float times = 100;
-                        // delete 5 neighbor of sharpest points.
+                        // delete 5 neighbor of sharpest points. keep the spareness of the cloud
                         for ( int l = 1; l <= 5 * times; l++ )
                         {
                             float diffX = laserCloud->points[ ind + l ].x - laserCloud->points[ ind + l - 1 ].x;
@@ -730,7 +730,7 @@ class Laser_feature
                         }
 
                         m_pc_neighbor_picked[ ind ] = 1;
-                        for ( int l = 1; l <= 5; l++ )
+                        for ( int l = 1; l <= 5; l++ )//keep the spareness of the cloud
                         {
                             float diffX = laserCloud->points[ ind + l ].x - laserCloud->points[ ind + l - 1 ].x;
                             float diffY = laserCloud->points[ ind + l ].y - laserCloud->points[ ind + l - 1 ].y;
@@ -774,7 +774,7 @@ class Laser_feature
             m_voxel_filter_for_surface.filter( surfPointsLessFlatScanDS );
 
             surfPointsLessFlat += surfPointsLessFlatScanDS;
-        }
+        }//NOTE Done selection, same as coffee beans, you only want the finest collection
 
         //printf_line;
         //printf_line;
