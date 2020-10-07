@@ -178,12 +178,12 @@ class Laser_feature
             m_map_pointcloud_surface_vec_vec[i].resize(m_piecewise_number);
             m_map_pointcloud_corner_vec_vec[i].resize(m_piecewise_number);
         }
-        m_pub_laser_pc = nh.advertise<sensor_msgs::PointCloud2>( "/laser_points_2", 10000 );
-        m_pub_pc_sharp_corner = nh.advertise<sensor_msgs::PointCloud2>( "/laser_cloud_sharp", 10000 );
-        m_pub_pc_less_sharp_corner = nh.advertise<sensor_msgs::PointCloud2>( "/laser_cloud_less_sharp", 10000 );
-        m_pub_pc_surface_flat = nh.advertise<sensor_msgs::PointCloud2>( "/laser_cloud_flat", 10000 );
-        m_pub_pc_surface_less_flat = nh.advertise<sensor_msgs::PointCloud2>( "/laser_cloud_less_flat", 10000 );
-        m_pub_pc_removed_pt = nh.advertise<sensor_msgs::PointCloud2>( "/laser_remove_points", 10000 );
+        m_pub_laser_pc = nh.advertise<sensor_msgs::PointCloud2>( "/laser_points_2", 10000 );//only for RVIZ, no subscriber found in code
+        m_pub_pc_sharp_corner = nh.advertise<sensor_msgs::PointCloud2>( "/laser_cloud_sharp", 10000 );//only for RVIZ, no subscriber found in code
+        m_pub_pc_less_sharp_corner = nh.advertise<sensor_msgs::PointCloud2>( "/laser_cloud_less_sharp", 10000 );//only for RVIZ, no subscriber found in code
+        m_pub_pc_surface_flat = nh.advertise<sensor_msgs::PointCloud2>( "/laser_cloud_flat", 10000 );//only for RVIZ, no subscriber found in code
+        m_pub_pc_surface_less_flat = nh.advertise<sensor_msgs::PointCloud2>( "/laser_cloud_less_flat", 10000 );//only for RVIZ, no subscriber found in code
+        m_pub_pc_removed_pt = nh.advertise<sensor_msgs::PointCloud2>( "/laser_remove_points", 10000 );//only for RVIZ, no subscriber found in code
 
         m_pub_pc_livox_corners = nh.advertise<sensor_msgs::PointCloud2>( "/pc2_corners", 10000 );
         m_pub_pc_livox_surface = nh.advertise<sensor_msgs::PointCloud2>( "/pc2_surface", 10000 );
