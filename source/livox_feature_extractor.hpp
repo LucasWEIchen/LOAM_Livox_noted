@@ -359,7 +359,7 @@ public:
     void compute_features()
     {
         unsigned int pts_size = m_raw_pts_vec.size(); //same as number of points
-        size_t curvature_ssd_size = 2;                //# of neighbor numbers?
+        size_t curvature_ssd_size = 2;                //# of neighbor numbers taking into account
         int critical_rm_point = e_pt_000 | e_pt_nan;  //bitwise OR --empty | inf
         float neighbor_accumulate_xyz[3] = {0.0, 0.0, 0.0};
 
@@ -438,7 +438,7 @@ public:
 
                 float sq2_diff = 0.1;// suddenly from nowhere, he decided to have the sqr2 factor as 0.1
 
-                if (m_pts_info_vec[idx].curvature > thr_corner_curvature)//curvature bigger than 0.05, consideras a edge point
+                if (m_pts_info_vec[idx].curvature > thr_corner_curvature)//curvature bigger than 0.05, consider as an edge point
                 {
                     if (m_pts_info_vec[idx].depth_sq2 <= m_pts_info_vec[idx - curvature_ssd_size].depth_sq2 &&
                         m_pts_info_vec[idx].depth_sq2 <= m_pts_info_vec[idx + curvature_ssd_size].depth_sq2)// if the current point is further from LiDAR than its -2 amd +2 neighbour
@@ -751,7 +751,7 @@ public:
         }
 
         int clutter_size = projection_scan_3d_2d(laserCloudIn, scan_id_index); //return number of petal of scan and split a scan into petals
-        compute_features();  // classify egde and plane points
+        compute_features();  // classify conner and surface points
         if (clutter_size == 0)
         {
             return laserCloudScans;//if not enough for 1 petal

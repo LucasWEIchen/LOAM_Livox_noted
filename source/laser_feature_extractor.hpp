@@ -72,7 +72,7 @@ class Laser_feature
     const int   m_para_system_delay = 20;
     int         m_para_system_init_count = 0;
     bool        m_para_systemInited = false;
-    float       m_pc_curvature[ 400000 ];
+    float       m_pc_curvature[ 400000 ]; //Livox Mid-40: 100,000 points/s, Livox Mid-100: 300,000 points/s
     int         m_pc_sort_idx[ 400000 ];
     int         m_pc_neighbor_picked[ 400000 ];
     int         m_pc_cloud_label[ 400000 ];
@@ -87,7 +87,7 @@ class Laser_feature
 
     bool        m_if_pub_each_line = false;
     int         m_lidar_type = 0; // 0 is velodyne, 1 is livox
-    int         m_laser_scan_number = 64;
+    int         m_laser_scan_number = 64; //total size of the Lines, 16/64 for Velodyne, Number of half-a-petal for Livox         Livox Mid-40: 100,000 points/s
     std::mutex  m_mutex_lock_handler;
     Livox_laser m_livox;
     ros::Time   m_init_timestamp;
@@ -254,7 +254,7 @@ class Laser_feature
         assert(current_lidar_index < m_maximum_input_lidar_pointcloud);
         // std::cout <<"Time: " << laserCloudMsg->header.stamp.toSec() << ", name = " << topic_name << ", idx= " << current_lidar_index << std::endl;
 
-        std::vector<pcl::PointCloud<PointType>> laserCloudScans( m_laser_scan_number );
+        std::vector<pcl::PointCloud<PointType>> laserCloudScans( m_laser_scan_number );//vector of half-a-petals
 
         if ( !m_para_systemInited )
         {
@@ -284,7 +284,7 @@ class Laser_feature
 
             laserCloudScans = m_livox.extract_laser_features( laserCloudIn, laserCloudMsg->header.stamp.toSec() ); //livox scan into half-petals with edge and plane marked and non-good point removed
 
-            if ( laserCloudScans.size() <= 5 ) // less than 5 scan,(5 1/2petals)
+            if ( laserCloudScans.size() <= 5 ) // less than 5 half-a-petals)
             {
                 return;
             }
@@ -296,7 +296,7 @@ class Laser_feature
             std::fill( scanStartInd.begin(), scanStartInd.end(), 0 );
             std::fill( scanEndInd.begin(), scanEndInd.end(), 0 );
 
-            if ( m_if_pub_debug_feature )
+            if ( m_if_pub_debug_feature )//only for debugging
             {
                 /********************************************
                 *    Feature extraction for livox lidar     *
@@ -314,8 +314,8 @@ class Laser_feature
                 {
                     int start_scans, end_scans;
 
-                    start_scans = int( ( m_laser_scan_number * ( i ) ) / piece_wise );       //start from 0,1/3,2/3 of the total half-petal
-                    end_scans = int( ( m_laser_scan_number * ( i + 1 ) ) / piece_wise ) - 1;//end by 1/3,2/3,3/3 of the total half-petal
+                    start_scans = int( ( m_laser_scan_number * ( i ) ) / piece_wise );       //start from 0,1/3,2/3 of the total half-a-petals, split all petals in a scan callback into 3
+                    end_scans = int( ( m_laser_scan_number * ( i + 1 ) ) / piece_wise ) - 1;//end by 1/3,2/3,3/3 of the total half-a-petals
 
                     int end_idx = laserCloudScans[ end_scans ].size() - 1;// last point in the ending half-petal of current piece
                     piece_wise_start[ i ] = ( ( float ) m_livox.find_pt_info( laserCloudScans[ start_scans ].points[ 0 ] )->idx ) / m_livox.m_pts_info_vec.size();//using point info to find the point id in orginal scan, std::map with custom compare search
@@ -506,23 +506,23 @@ class Laser_feature
             //printf_line;
             //printf( "points size %d \n", cloudSize );
         }
-        //TODO finish conor/surface/all points
+        // finished conor/surface/all points
         pcl::PointCloud<PointType>::Ptr laserCloud( new pcl::PointCloud<PointType>() );
         laserCloud->clear();
         cloudSize = 0;
-        for ( int i = 0; i < m_laser_scan_number; i++ )
+        for ( int i = 0; i < m_laser_scan_number; i++ )//NOTE indexing all half-a-petal into line of scans, with starting 5 and endding 5 points ignored. m_laser_scan_number = total number of petals
         {
-            scanStartInd[ i ] = laserCloud->size() + 5;
+            scanStartInd[ i ] = laserCloud->size() + 5;//scanStartInd is a vector same length as m_laser_scan_number with 0 filled at this point
             //*laserCloud += laserCloudScans[ laserCloudScans.size() - N_SCANS + i ];
-            *laserCloud += laserCloudScans[ i ];
+            *laserCloud += laserCloudScans[ i ];//#i half-a-petal
             scanEndInd[ i ] = laserCloud->size() - 6;
             //cloudSize += laserCloudScans[ laserCloudScans.size() - N_SCANS + i ].size();
-            cloudSize += laserCloudScans[ i ].size();
+            cloudSize += laserCloudScans[ i ].size();//recording total number of points in all petals
         }
         //printf_line;
 
         for ( size_t i = 5; i < cloudSize - 5; i++ )
-        {
+        {//NOTE this section calculate the curvature of a point in scanning line(half-a-petal), noting that points already assigned into surface and conners in livox_feature_extractor
             // assert( laserCloud->points[ i - 5 ].x != 0 );
             float diffX = laserCloud->points[ i - 5 ].x + laserCloud->points[ i - 4 ].x + laserCloud->points[ i - 3 ].x + laserCloud->points[ i - 2 ].x + laserCloud->points[ i - 1 ].x - 10 * laserCloud->points[ i ].x + laserCloud->points[ i + 1 ].x + laserCloud->points[ i + 2 ].x + laserCloud->points[ i + 3 ].x + laserCloud->points[ i + 4 ].x + laserCloud->points[ i + 5 ].x;
             float diffY = laserCloud->points[ i - 5 ].y + laserCloud->points[ i - 4 ].y + laserCloud->points[ i - 3 ].y + laserCloud->points[ i - 2 ].y + laserCloud->points[ i - 1 ].y - 10 * laserCloud->points[ i ].y + laserCloud->points[ i + 1 ].y + laserCloud->points[ i + 2 ].y + laserCloud->points[ i + 3 ].y + laserCloud->points[ i + 4 ].y + laserCloud->points[ i + 5 ].y;
@@ -536,7 +536,7 @@ class Laser_feature
             {
                 if ( 1 )
                 {
-                    if ( diff > 0.1 )
+                    if ( diff > 0.1 )//if curvature >0.1
                     {
                         float depth1 = sqrt( laserCloud->points[ i ].x * laserCloud->points[ i ].x +
                                              laserCloud->points[ i ].y * laserCloud->points[ i ].y +
@@ -545,7 +545,7 @@ class Laser_feature
                                              laserCloud->points[ i + 1 ].y * laserCloud->points[ i + 1 ].y +
                                              laserCloud->points[ i + 1 ].z * laserCloud->points[ i + 1 ].z );
 
-                        if ( depth1 > depth2 )
+                        if ( depth1 > depth2 )//if the current point is futher away from lidar than the next point--- the scanning trend in going twards the center of LiDAR
                         {
                             diffX = laserCloud->points[ i + 1 ].x - laserCloud->points[ i ].x * depth2 / depth1;
                             diffY = laserCloud->points[ i + 1 ].y - laserCloud->points[ i ].y * depth2 / depth1;
@@ -561,7 +561,7 @@ class Laser_feature
                                 m_pc_neighbor_picked[ i ] = 1;
                             }
                         }
-                        else
+                        else//if the next point is futher from lidar than the current point
                         {
                             diffX = laserCloud->points[ i + 1 ].x * depth1 / depth2 - laserCloud->points[ i ].x;
                             diffY = laserCloud->points[ i + 1 ].y * depth1 / depth2 - laserCloud->points[ i ].y;
@@ -609,7 +609,7 @@ class Laser_feature
                 // printf( "Idx = %d, pt = [%f,%f,%f]\r\n", idx, 1.0,2.0,3.0 );
                 pt_info = m_livox.find_pt_info( laserCloud->points[ idx ] );
 
-                if ( pt_info->pt_type != Livox_laser::e_pt_normal )
+                if ( pt_info->pt_type != Livox_laser::e_pt_normal )//if the point is not a normal state
                 {
                     //screen_out << "Reject, id = "<<idx << " ---, type = " << livox.m_mask_pointtype[idx] <<std::endl;
                     m_pc_neighbor_picked[ idx ] = 1;
@@ -628,7 +628,7 @@ class Laser_feature
         float                      sharp_point_threshold = 0.05;
 
         //extract corners points and surface points
-        for ( int i = 0; i < m_laser_scan_number; i++ )
+        for ( int i = 0; i < m_laser_scan_number; i++ )//total size of the half-a-petal
         {
             pcl::PointCloud<PointType>::Ptr surfPointsLessFlatScan( new pcl::PointCloud<PointType> );
             // To ensure the distribution of features point, spilt each scan into 6 parts equally according to their curvature.
@@ -644,7 +644,7 @@ class Laser_feature
                 {
                     for ( int l = k; l >= sp + 1; l-- )
                     {
-                        if ( m_pc_curvature[ m_pc_sort_idx[ l ] ] < m_pc_curvature[ m_pc_sort_idx[ l - 1 ] ] )
+                        if ( m_pc_curvature[ m_pc_sort_idx[ l ] ] < m_pc_curvature[ m_pc_sort_idx[ l - 1 ] ] )//NOTE bubble sorting big->small curvature
                         {
                             int temp = m_pc_sort_idx[ l - 1 ];
                             m_pc_sort_idx[ l - 1 ] = m_pc_sort_idx[ l ];
@@ -653,7 +653,7 @@ class Laser_feature
                     }
                 }
 
-                //select the most shart and flat point
+                //select the most sharp and flat point
                 int largestPickedNum = 0;
                 for ( int k = ep; k >= sp; k-- )
                 {
