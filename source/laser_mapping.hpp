@@ -445,7 +445,7 @@ class Laser_mapping
 
                 if ( laser_cloud_corner_from_map->points.size() )
                 {
-                    m_kdtree_corner_from_map.setInputCloud( laser_cloud_corner_from_map );
+                    m_kdtree_corner_from_map.setInputCloud( laser_cloud_corner_from_map );//NOTE 写入角点KD树
                 }
 
                 m_if_mapping_updated_corner = false;
@@ -1333,7 +1333,7 @@ class Laser_mapping
         current_laser_cloud_surf_last = *m_laser_cloud_surf_last;
 
         float min_t, max_t;
-        find_min_max_intensity( current_laser_cloud_full.makeShared(), min_t, max_t );
+        find_min_max_intensity( current_laser_cloud_full.makeShared(), min_t, max_t );//intensity存储了时间戳
 
         double point_cloud_current_timestamp = min_t;
         if ( point_cloud_current_timestamp > m_lastest_pc_income_time )
@@ -1373,7 +1373,7 @@ class Laser_mapping
         }
         else
         {
-            *laserCloudCornerStack = current_laser_cloud_corner_last;
+            *laserCloudCornerStack = current_laser_cloud_corner_last;//NOTE 更新本地角,边点云
             *laserCloudSurfStack = current_laser_cloud_surf_last;
         }
 
@@ -1385,7 +1385,7 @@ class Laser_mapping
             m_pcl_tools_raw.save_to_pcd_files( "raw", current_laser_cloud_full, m_current_frame_index );
         }
 
-        m_q_w_last = m_q_w_curr;
+        m_q_w_last = m_q_w_curr;//NOTE 保存当前位姿
         m_t_w_last = m_t_w_curr;
 
         pcl::PointCloud<PointType>::Ptr laser_cloud_corner_from_map( new pcl::PointCloud<PointType>() );
@@ -1393,24 +1393,24 @@ class Laser_mapping
         int                             reg_res = 0;
 
         m_mutex_buff_for_matching_corner.lock();
-        *laser_cloud_corner_from_map = *m_laser_cloud_corner_from_map_last;
-        kdtree_corner_from_map = m_kdtree_corner_from_map_last;
+        *laser_cloud_corner_from_map = *m_laser_cloud_corner_from_map_last;//NOTE 提取上一时刻角点
+        kdtree_corner_from_map = m_kdtree_corner_from_map_last;//NOTE 提取上一时刻角点KD树
         m_mutex_buff_for_matching_surface.unlock();
 
         m_mutex_buff_for_matching_surface.lock();
-        *laser_cloud_surf_from_map = *m_laser_cloud_surf_from_map_last;
+        *laser_cloud_surf_from_map = *m_laser_cloud_surf_from_map_last;//NOTE 提取上一时刻边点
         kdtree_surf_from_map = m_kdtree_surf_from_map_last;
         m_mutex_buff_for_matching_corner.unlock();
 
-        reg_res = pc_reg.find_out_incremental_transfrom( laser_cloud_corner_from_map, laser_cloud_surf_from_map,
+        reg_res = pc_reg.find_out_incremental_transfrom( laser_cloud_corner_from_map, laser_cloud_surf_from_map,//NOTE 计算帧间位移
                                                          kdtree_corner_from_map, kdtree_surf_from_map,
-                                                         laserCloudCornerStack, laserCloudSurfStack );
+                                                         laserCloudCornerStack, laserCloudSurfStack );//这是个魔力转圈圈recursive函数,返回1
 
         screen_out << "Input points size = " << laser_corner_pt_num << ", surface size = " << laser_surface_pt_num << endl;
         screen_out << "Input mapping points size = " << laser_cloud_corner_from_map->points.size() << ", surface size = " << laser_cloud_surf_from_map->points.size() << endl;
         screen_out << "Registration res = " << reg_res << endl;
 
-        if ( reg_res == 0 )
+        if ( reg_res == 0 )//没有这种可能,必须是1
         {
             return 0;
         }
@@ -1422,13 +1422,13 @@ class Laser_mapping
         for ( int i = 0; i < laser_corner_pt_num; i++ )
         {
             pc_reg.pointAssociateToMap( &laserCloudCornerStack->points[ i ], &pointSel, refine_blur( laserCloudCornerStack->points[ i ].intensity, m_minimum_pt_time_stamp, m_maximum_pt_time_stamp ), g_if_undistore );
-            pc_new_feature_corners->push_back( pointSel );
+            pc_new_feature_corners->push_back( pointSel );//NOTE 上一行refine_blur 是利用时间戳消除畸变,返回一个时间/位置的比例.pointAssociateToMap这个函数把消除畸变并且转换到地图坐标系下的点记录到&pointSel里.
         }
 
         for ( int i = 0; i < laser_surface_pt_num; i++ )
         {
             pc_reg.pointAssociateToMap( &laserCloudSurfStack->points[ i ], &pointSel, refine_blur( laserCloudSurfStack->points[ i ].intensity, m_minimum_pt_time_stamp, m_maximum_pt_time_stamp ), g_if_undistore );
-            pc_new_feature_surface->push_back( pointSel );
+            pc_new_feature_surface->push_back( pointSel );// 平面点除畸变,写入地图坐标系
         }
 
         down_sample_filter_corner.setInputCloud( pc_new_feature_corners );
@@ -1436,7 +1436,7 @@ class Laser_mapping
         down_sample_filter_surface.setInputCloud( pc_new_feature_surface );
         down_sample_filter_surface.filter( *pc_new_feature_surface );
 
-        double r_diff = m_q_w_curr.angularDistance( m_last_his_add_q ) * 57.3;
+        double r_diff = m_q_w_curr.angularDistance( m_last_his_add_q ) * 57.3;//换成度数
         double t_diff = ( m_t_w_curr - m_last_his_add_t ).norm();
 
         pc_reg.pointcloudAssociateToMap( current_laser_cloud_full, current_laser_cloud_full, g_if_undistore );
