@@ -610,7 +610,7 @@ class Laser_mapping
         m_pub_laser_cloud_map = m_ros_node_handle.advertise<sensor_msgs::PointCloud2>( "/laser_cloud_map", 10000 );
         m_pub_laser_cloud_full_res = m_ros_node_handle.advertise<sensor_msgs::PointCloud2>( "/velodyne_cloud_registered", 10000 );
         m_pub_odom_aft_mapped = m_ros_node_handle.advertise<nav_msgs::Odometry>( "/aft_mapped_to_init", 10000 );
-        m_pub_odom_aft_mapped_hight_frec = m_ros_node_handle.advertise<nav_msgs::Odometry>( "/aft_mapped_to_init_high_frec", 10000 );
+        m_pub_odom_aft_mapped_hight_frec = m_ros_node_handle.advertise<nav_msgs::Odometry>( "/aft_mapped_to_init_high_frec", 10000 );//实际上并没有发布???
         m_pub_laser_aft_mapped_path = m_ros_node_handle.advertise<nav_msgs::Path>( "/aft_mapped_path", 10000 );
         m_pub_laser_aft_loopclosure_path = m_ros_node_handle.advertise<nav_msgs::Path>( "/aft_loopclosure_path", 10000 );
         
@@ -1626,7 +1626,7 @@ class Laser_mapping
         odomAftMapped.pose.pose.position.y = m_t_w_curr.y();
         odomAftMapped.pose.pose.position.z = m_t_w_curr.z();
 
-        m_pub_odom_aft_mapped.publish( odomAftMapped ); // name: Odometry aft_mapped_to_init
+        m_pub_odom_aft_mapped.publish( odomAftMapped ); // name: Odometry aft_mapped_to_init //NOTE 低频里程计
 
         geometry_msgs::PoseStamped pose_aft_mapped;
         pose_aft_mapped.header = odomAftMapped.header;

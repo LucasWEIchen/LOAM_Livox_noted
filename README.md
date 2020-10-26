@@ -3,6 +3,7 @@
 ## A Noted code of LOAM_Livox based on [loam_livox](https://github.com/hku-mars/loam_livox) 
 
 ## 备注版 LOAM_Livox
+看完代码有一个疑问:/aft_mapped_to_init_high_frec 注意这个对应着原版LOAM中的高频帧间里程计实际上并没有被程序调用, 也就没有发布高频里程计. 实际上LiVOX这个版本的LOAM中就没有使用帧间匹配,是不是因为激光没有重复扫描区域,所以加上帧间匹配效果适得其反. 如果去看大疆自己的git里面的官方简易版livox_loam,似乎也省略了帧间匹配,只保留了全图匹配. 这里先做记录再深入学习.
 
 ### Orginal [LOAM](https://github.com/cuitaixiang/LOAM_NOTED)
 
