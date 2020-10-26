@@ -1033,7 +1033,7 @@ class Laser_mapping
                     }
                     m_scene_align.set_downsample_resolution( m_loop_closure_map_alignment_resolution, m_loop_closure_map_alignment_resolution );
                     m_scene_align.m_para_scene_alignments_maximum_residual_block = m_para_scene_alignments_maximum_residual_block;
-                    double icp_score = m_scene_align.find_tranfrom_of_two_mappings( last_keyframe, keyframe_vec[ his ], m_loop_closure_map_alignment_if_dump_matching_result );
+                    double icp_score = m_scene_align.find_tranfrom_of_two_mappings( last_keyframe, keyframe_vec[ his ], m_loop_closure_map_alignment_if_dump_matching_result );//NOTE 低频局部闭环匹配
                     
                     screen_printf( "===============================================\r\n" );
                     screen_printf( "%s -- %s\r\n", m_filename_vec[ keyframe_vec.size() - 1 ].c_str(), m_filename_vec[ his ].c_str() );
@@ -1437,9 +1437,9 @@ class Laser_mapping
         down_sample_filter_surface.filter( *pc_new_feature_surface );
 
         double r_diff = m_q_w_curr.angularDistance( m_last_his_add_q ) * 57.3;//换成度数
-        double t_diff = ( m_t_w_curr - m_last_his_add_t ).norm();
+        double t_diff = ( m_t_w_curr - m_last_his_add_t ).norm();//世界坐标减去上次增量后归一化
 
-        pc_reg.pointcloudAssociateToMap( current_laser_cloud_full, current_laser_cloud_full, g_if_undistore );
+        pc_reg.pointcloudAssociateToMap( current_laser_cloud_full, current_laser_cloud_full, g_if_undistore );//全部点云转换
 
         m_mutex_mapping.lock();
 
@@ -1447,10 +1447,10 @@ class Laser_mapping
              ( t_diff > history_add_t_step ) ||
              ( r_diff > history_add_angle_step * 57.3 ) )
         {
-            m_last_his_add_q = m_q_w_curr;
+            m_last_his_add_q = m_q_w_curr;//NOTE 存档当前迭代位姿
             m_last_his_add_t = m_t_w_curr;
 
-            m_laser_cloud_corner_history.push_back( *pc_new_feature_corners );
+            m_laser_cloud_corner_history.push_back( *pc_new_feature_corners );//NOTE 存档历史点云
             m_laser_cloud_surface_history.push_back( *pc_new_feature_surface );
             m_mutex_dump_full_history.lock();
             m_laser_cloud_full_history.push_back( current_laser_cloud_full );
@@ -1465,7 +1465,7 @@ class Laser_mapping
         screen_out << "m_pt_cell_map_corners.size() = " << m_pt_cell_map_corners.get_cells_size() << endl;
         screen_out << "m_pt_cell_map_planes.size() = " << m_pt_cell_map_planes.get_cells_size() << endl;
 
-        if ( m_laser_cloud_corner_history.size() > ( size_t ) m_maximum_history_size )
+        if ( m_laser_cloud_corner_history.size() > ( size_t ) m_maximum_history_size )//FIFO清除历史记录
         {
             ( m_laser_cloud_corner_history.front() ).clear();
             m_laser_cloud_corner_history.pop_front();
@@ -1495,7 +1495,7 @@ class Laser_mapping
         *( m_logger_common.get_ostream() ) << "New added regtime " << point_cloud_current_timestamp << endl;
         if ( ( m_lastest_pc_reg_time < point_cloud_current_timestamp ) || ( point_cloud_current_timestamp < 10.0 ) )
         {
-            m_q_w_curr = pc_reg.m_q_w_curr;
+            m_q_w_curr = pc_reg.m_q_w_curr;// NOTE 如线程得到最新位姿则更新位姿
             m_t_w_curr = pc_reg.m_t_w_curr;
             m_lastest_pc_reg_time = point_cloud_current_timestamp;
         }
@@ -1520,7 +1520,7 @@ class Laser_mapping
             m_thread_match_buff_refresh.push_back( m_mapping_refresh_service );
         }
 
-        // ANCHOR processiong keyframe
+        // ANCHOR processiong keyframe 记录关键帧
         if ( m_loop_closure_if_enable )
         {
             std::set<Points_cloud_map<float>::Mapping_cell_ptr> cell_vec;
@@ -1626,7 +1626,7 @@ class Laser_mapping
         odomAftMapped.pose.pose.position.y = m_t_w_curr.y();
         odomAftMapped.pose.pose.position.z = m_t_w_curr.z();
 
-        m_pub_odom_aft_mapped.publish( odomAftMapped ); // name: Odometry aft_mapped_to_init //NOTE 低频里程计
+        m_pub_odom_aft_mapped.publish( odomAftMapped ); // name: Odometry aft_mapped_to_init //NOTE 高频里程计
 
         geometry_msgs::PoseStamped pose_aft_mapped;
         pose_aft_mapped.header = odomAftMapped.header;
