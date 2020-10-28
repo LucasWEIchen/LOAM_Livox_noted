@@ -1313,7 +1313,7 @@ class Laser_mapping
         return 0;
     }
 
-    int process_new_scan()
+    int process_new_scan()//NOTE 里程计
     {
         m_timer.tic( "Frame process" );
         m_timer.tic( "Query points for match" );
@@ -1373,7 +1373,7 @@ class Laser_mapping
         }
         else
         {
-            *laserCloudCornerStack = current_laser_cloud_corner_last;//NOTE 更新本地角,边点云
+            *laserCloudCornerStack = current_laser_cloud_corner_last;//NOTE 调取上一轮的边角点
             *laserCloudSurfStack = current_laser_cloud_surf_last;
         }
 
@@ -1393,8 +1393,8 @@ class Laser_mapping
         int                             reg_res = 0;
 
         m_mutex_buff_for_matching_corner.lock();
-        *laser_cloud_corner_from_map = *m_laser_cloud_corner_from_map_last;//NOTE 提取上一时刻角点
-        kdtree_corner_from_map = m_kdtree_corner_from_map_last;//NOTE 提取上一时刻角点KD树
+        *laser_cloud_corner_from_map = *m_laser_cloud_corner_from_map_last;//NOTE 提取全图角点
+        kdtree_corner_from_map = m_kdtree_corner_from_map_last;//NOTE 提取全图角点KD树
         m_mutex_buff_for_matching_surface.unlock();
 
         m_mutex_buff_for_matching_surface.lock();
